@@ -10,6 +10,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      boxShadow: {
+        custom:
+          "0px 1px 2px 0px rgba(16, 24, 40, 0.05), 0px 0px 0px 4px #D4DBE5",
+      },
       colors: {
         brand: "#E1E7EC",
         gray: colors.slate,

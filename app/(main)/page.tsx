@@ -8,6 +8,7 @@ import { domain } from "@/utils/domain";
 import { CheckIcon } from "@heroicons/react/16/solid";
 import { ArrowLongRightIcon, ChevronDownIcon } from "@heroicons/react/20/solid";
 import { ArrowUpOnSquareIcon } from "@heroicons/react/24/outline";
+import { AdjustmentsHorizontalIcon } from "@heroicons/react/24/outline";
 import * as Select from "@radix-ui/react-select";
 import * as Switch from "@radix-ui/react-switch";
 import * as Tooltip from "@radix-ui/react-tooltip";
@@ -21,6 +22,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { toast, Toaster } from "sonner";
 import LoadingDots from "../../components/loading-dots";
 import { shareApp } from "./actions";
+import { Dialog } from "@headlessui/react";
 
 export default function Home() {
   let [status, setStatus] = useState<
@@ -28,7 +30,7 @@ export default function Home() {
   >("initial");
   let [generatedCode, setGeneratedCode] = useState("");
   let [initialAppConfig, setInitialAppConfig] = useState({
-    model: "",
+    model: "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
     shadcn: false,
   });
   let [ref, scrollTo] = useScrollTo();
@@ -36,8 +38,21 @@ export default function Home() {
     [],
   );
   let [isPublishing, setIsPublishing] = useState(false);
+  let [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  let [temperature, setTemperature] = useState(0.43);
+  let [language, setLanguage] = useState("React");
+  let [promptInput, setPromptInput] = useState(""); // New state for the input value
 
   let loading = status === "creating" || status === "updating";
+
+  const suggestions = [
+    "Daily quotes",
+    "Calculator app",
+    "Recipe finder",
+    "Expense tracker",
+    "Random number generator",
+    "E-commerce store",
+  ];
 
   async function generateCode(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -188,122 +203,243 @@ export default function Home() {
     }
   }, [loading, generatedCode]);
 
+  const handleSuggestionClick = (suggestion: string) => {
+    setPromptInput(suggestion);
+  };
+
   return (
     <div className="mx-auto flex min-h-screen max-w-7xl flex-col items-center justify-center py-2">
       <Header />
 
       <main className="mt-12 flex w-full flex-1 flex-col items-center px-4 text-center sm:mt-20">
-        <a
-          className="mb-4 inline-flex h-7 shrink-0 items-center gap-[9px] rounded-[50px] border-[0.5px] border-solid border-[#E6E6E6] bg-[rgba(234,238,255,0.65)] bg-gray-100 px-7 py-5 shadow-[0px_1px_1px_0px_rgba(0,0,0,0.25)]"
-          href="https://dub.sh/together-ai/?utm_source=example-app&utm_medium=llamacoder&utm_campaign=llamacoder-app-signup"
-          target="_blank"
-        >
-          <span className="text-center">
-            Powered by <span className="font-medium">Llama 3.1</span> and{" "}
-            <span className="font-medium">Together AI</span>
-          </span>
-        </a>
         <h1 className="my-6 max-w-3xl text-4xl font-bold text-gray-800 sm:text-6xl">
           Turn your <span className="text-blue-600">idea</span>
           <br /> into an <span className="text-blue-600">app</span>
         </h1>
 
-        <form className="w-full max-w-xl" onSubmit={generateCode}>
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
+          {suggestions.map((suggestion) => (
+            <span
+              key={suggestion}
+              className="inline-flex cursor-pointer items-center rounded-[6px] bg-gray-200 px-3 py-1 text-sm font-medium text-gray-700 hover:underline"
+              onClick={() => handleSuggestionClick(suggestion)}
+            >
+              {suggestion}
+            </span>
+          ))}
+        </div>
+
+        <form className="relative w-full max-w-xl" onSubmit={generateCode}>
           <fieldset disabled={loading} className="disabled:opacity-75">
-            <div className="relative mt-5">
-              <div className="absolute -inset-2 rounded-[32px] bg-gray-300/50" />
-              <div className="relative flex rounded-3xl bg-white shadow-sm">
-                <div className="relative flex flex-grow items-stretch focus-within:z-10">
-                  <input
-                    required
-                    name="prompt"
-                    className="w-full rounded-l-3xl bg-transparent px-6 py-5 text-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500"
-                    placeholder="Build me a calculator app..."
-                  />
-                </div>
+            <div className="relative mt-5 flex gap-2">
+              <div className="shadow-custom relative flex w-full rounded-[6px] bg-white">
+                <input
+                  required
+                  name="prompt"
+                  value={promptInput}
+                  onChange={(e) => setPromptInput(e.target.value)}
+                  className="w-full rounded-[6px] border border-gray-300 bg-transparent px-6 py-4 pr-14 text-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  placeholder="Build me a calculator app..."
+                />
                 <button
                   type="submit"
                   disabled={loading}
-                  className="relative -ml-px inline-flex items-center gap-x-1.5 rounded-r-3xl px-3 py-2 text-sm font-semibold text-blue-500 hover:text-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 disabled:text-gray-900"
+                  className="text-bleu absolute right-3 top-1/2 inline-flex -translate-y-1/2 transform items-center justify-center rounded-[10px] bg-white p-2 text-sm font-semibold text-blue-500 hover:bg-blue-500 hover:text-white focus-visible:outline-none focus-visible:ring-blue-500"
                 >
                   {status === "creating" ? (
-                    <LoadingDots color="black" style="large" />
+                    <LoadingDots color="white" style="large" />
                   ) : (
-                    <ArrowLongRightIcon className="-ml-0.5 size-6" />
+                    <ArrowLongRightIcon className="h-7 w-7" />
                   )}
                 </button>
               </div>
+              <button
+                type="button"
+                onClick={() => setIsSettingsOpen(true)}
+                className="shadow-custom ml-2 flex h-[63px] w-[63px] items-center justify-center rounded-[6px] bg-blue-500 p-4 text-white hover:bg-white hover:text-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              >
+                <AdjustmentsHorizontalIcon className="h-7 w-7" />
+              </button>
             </div>
-            <div className="mt-6 flex flex-col justify-center gap-4 sm:flex-row sm:items-center sm:gap-8">
-              <div className="flex items-center justify-between gap-3 sm:justify-center">
-                <p className="text-gray-500 sm:text-xs">Model:</p>
-                <Select.Root
-                  name="model"
-                  defaultValue="meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo"
-                  disabled={loading}
-                >
-                  <Select.Trigger className="group flex w-60 max-w-xs items-center rounded-2xl border-[6px] border-gray-300 bg-white px-4 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500">
-                    <Select.Value />
-                    <Select.Icon className="ml-auto">
-                      <ChevronDownIcon className="size-6 text-gray-300 group-focus-visible:text-gray-500 group-enabled:group-hover:text-gray-500" />
-                    </Select.Icon>
-                  </Select.Trigger>
-                  <Select.Portal>
-                    <Select.Content className="overflow-hidden rounded-md bg-white shadow-lg">
-                      <Select.Viewport className="p-2">
-                        {[
-                          {
-                            label: "Llama 3.1 405B",
-                            value:
-                              "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
-                          },
-                          {
-                            label: "Llama 3.1 70B",
-                            value:
-                              "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
-                          },
-                          {
-                            label: "Gemma 2 27B",
-                            value: "google/gemma-2-27b-it",
-                          },
-                        ].map((model) => (
-                          <Select.Item
-                            key={model.value}
-                            value={model.value}
-                            className="flex cursor-pointer items-center rounded-md px-3 py-2 text-sm data-[highlighted]:bg-gray-100 data-[highlighted]:outline-none"
-                          >
-                            <Select.ItemText asChild>
-                              <span className="inline-flex items-center gap-2 text-gray-500">
-                                <div className="size-2 rounded-full bg-green-500" />
-                                {model.label}
-                              </span>
-                            </Select.ItemText>
-                            <Select.ItemIndicator className="ml-auto">
-                              <CheckIcon className="size-5 text-blue-600" />
-                            </Select.ItemIndicator>
-                          </Select.Item>
-                        ))}
-                      </Select.Viewport>
-                      <Select.ScrollDownButton />
-                      <Select.Arrow />
-                    </Select.Content>
-                  </Select.Portal>
-                </Select.Root>
-              </div>
 
-              <div className="flex h-full items-center justify-between gap-3 sm:justify-center">
-                <label className="text-gray-500 sm:text-xs" htmlFor="shadcn">
-                  shadcn/ui:
-                </label>
-                <Switch.Root
-                  className="group flex w-20 max-w-xs items-center rounded-2xl border-[6px] border-gray-300 bg-white p-1.5 text-sm shadow-inner transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 data-[state=checked]:bg-blue-500"
-                  id="shadcn"
-                  name="shadcn"
-                >
-                  <Switch.Thumb className="size-7 rounded-lg bg-gray-200 shadow-[0_1px_2px] shadow-gray-400 transition data-[state=checked]:translate-x-7 data-[state=checked]:bg-white data-[state=checked]:shadow-gray-600" />
-                </Switch.Root>
+            <Dialog
+              open={isSettingsOpen}
+              onClose={() => setIsSettingsOpen(false)}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+            >
+              <div className="w-[340px] rounded-[12px] bg-gray-100 p-6 shadow-lg">
+                <h2 className="mb-4 text-lg font-bold text-gray-700">
+                  Settings
+                </h2>
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <label className="font-small mb-2 block text-sm text-gray-700">
+                      MODELS
+                    </label>
+                    <Select.Root
+                      name="model"
+                      value={initialAppConfig.model}
+                      onValueChange={(value) =>
+                        setInitialAppConfig({
+                          ...initialAppConfig,
+                          model: value,
+                        })
+                      }
+                      disabled={loading}
+                    >
+                      <Select.Trigger className="flex w-full items-center rounded-[6px] border border-gray-300 bg-white px-4 py-3 text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500">
+                        <div className="mr-2 h-2 w-2 rounded-full bg-green-500"></div>
+                        <Select.Value className="text-gray-700" />
+                        <Select.Icon className="ml-auto">
+                          <ChevronDownIcon className="h-5 w-5 text-gray-500" />
+                        </Select.Icon>
+                      </Select.Trigger>
+                      <Select.Portal>
+                        <Select.Content className="z-50 overflow-hidden rounded-[6px] bg-white shadow-lg">
+                          <Select.Viewport className="p-2">
+                            {[
+                              {
+                                label: "Llama 3.1 405B",
+                                value:
+                                  "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
+                              },
+                              {
+                                label: "Llama 3.1 70B",
+                                value:
+                                  "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+                              },
+                              {
+                                label: "Gemma 2 27B",
+                                value: "google/gemma-2-27b-it",
+                              },
+                            ].map((model) => (
+                              <Select.Item
+                                key={model.value}
+                                value={model.value}
+                                className="flex cursor-pointer items-center rounded-[6px] px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              >
+                                <Select.ItemText>{model.label}</Select.ItemText>
+                                <Select.ItemIndicator className="ml-auto">
+                                  <CheckIcon className="h-5 w-5 text-blue-600" />
+                                </Select.ItemIndicator>
+                              </Select.Item>
+                            ))}
+                          </Select.Viewport>
+                        </Select.Content>
+                      </Select.Portal>
+                    </Select.Root>
+                  </div>
+
+                  <div>
+                    <label className="font-sm mb-2 block text-sm text-gray-700">
+                      LANGUAGE
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        className={`rounded-[6px] px-4 py-2 text-sm ${
+                          language === "React"
+                            ? "bg-gray-900 text-white"
+                            : "bg-gray-200 text-gray-700"
+                        } shadow-sm`}
+                        onClick={() => setLanguage("React")}
+                      >
+                        React
+                      </button>
+                      <button
+                        type="button"
+                        className={`rounded-[6px] px-4 py-2 text-sm ${
+                          language === "Python"
+                            ? "bg-gray-900 text-white"
+                            : "bg-gray-200 text-gray-700"
+                        } shadow-sm`}
+                        onClick={() => setLanguage("Python")}
+                      >
+                        Python
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="font-sm mb-2 block text-sm text-gray-700">
+                      SHADCN/UI
+                    </label>
+                    <Switch.Root
+                      className={`group flex h-[24px] w-[48px] items-center rounded-full p-0.5 shadow-inner transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 ${
+                        initialAppConfig.shadcn ? "bg-black" : "bg-gray-200"
+                      }`}
+                      checked={initialAppConfig.shadcn}
+                      onCheckedChange={(checked) =>
+                        setInitialAppConfig({
+                          ...initialAppConfig,
+                          shadcn: checked,
+                        })
+                      }
+                    >
+                      <Switch.Thumb
+                        className={`h-[20px] w-[20px] rounded-full bg-white shadow transition ${
+                          initialAppConfig.shadcn
+                            ? "translate-x-[24px]"
+                            : "translate-x-0"
+                        }`}
+                      />
+                    </Switch.Root>
+                  </div>
+
+                  <div>
+                    <label className="font-sm mb-2 block text-sm text-gray-700">
+                      TEMPERATURE
+                    </label>
+                    <div className="relative">
+                      <div className="flex items-center overflow-hidden rounded-[6px] bg-gray-200">
+                        <div
+                          className="bg-gray-900 px-4 py-2 text-sm text-white"
+                          style={{ width: `${temperature * 100}%` }}
+                        >
+                          {temperature.toFixed(2)}
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.01"
+                          value={temperature}
+                          onChange={(e) =>
+                            setTemperature(parseFloat(e.target.value))
+                          }
+                          className="absolute inset-0 w-full cursor-pointer opacity-0"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex justify-between">
+                    <button
+                      type="button"
+                      className="rounded-[6px] bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm"
+                      onClick={() => {
+                        setInitialAppConfig({
+                          model:
+                            "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
+                          shadcn: false,
+                        });
+                        setLanguage("React");
+                        setTemperature(0.43);
+                      }}
+                    >
+                      Reset
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-[6px] bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-sm"
+                      onClick={() => setIsSettingsOpen(false)}
+                    >
+                      Save settings
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            </Dialog>
           </fieldset>
         </form>
 
@@ -326,13 +462,13 @@ export default function Home() {
               <form className="w-full" onSubmit={modifyCode}>
                 <fieldset disabled={loading} className="group">
                   <div className="relative">
-                    <div className="relative flex rounded-3xl bg-white shadow-sm group-disabled:bg-gray-50">
+                    <div className="relative flex rounded-[10px] bg-white shadow-sm group-disabled:bg-gray-50">
                       <div className="relative flex flex-grow items-stretch focus-within:z-10">
                         <input
                           required
                           name="prompt"
-                          className="w-full rounded-l-3xl bg-transparent px-6 py-5 text-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed"
-                          placeholder="Make changes to your app here"
+                          className="w-full rounded-l-3xl bg-transparent px-6 py-5 text-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500"
+                          placeholder="Build me a calculator app..."
                         />
                       </div>
                       <button
@@ -340,7 +476,7 @@ export default function Home() {
                         disabled={loading}
                         className="relative -ml-px inline-flex items-center gap-x-1.5 rounded-r-3xl px-3 py-2 text-sm font-semibold text-blue-500 hover:text-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 disabled:text-gray-900"
                       >
-                        {loading ? (
+                        {status === "creating" ? (
                           <LoadingDots color="black" style="large" />
                         ) : (
                           <ArrowLongRightIcon className="-ml-0.5 size-6" />
@@ -381,7 +517,7 @@ export default function Home() {
                             `${domain}/share/${appId}`,
                           );
                         }}
-                        className="inline-flex h-[68px] w-40 items-center justify-center gap-2 rounded-3xl bg-blue-500 transition enabled:hover:bg-blue-600 disabled:grayscale"
+                        className="inline-flex h-[68px] w-40 items-center justify-center gap-2 rounded-[10px] bg-blue-500 transition enabled:hover:bg-blue-600 disabled:grayscale"
                       >
                         <span className="relative">
                           {isPublishing && (
@@ -402,7 +538,7 @@ export default function Home() {
                     </Tooltip.Trigger>
                     <Tooltip.Portal>
                       <Tooltip.Content
-                        className="select-none rounded bg-white px-4 py-2.5 text-sm leading-none shadow-md shadow-black/20"
+                        className="select-none rounded-[10px] bg-white px-4 py-2.5 text-sm leading-none shadow-md shadow-black/20"
                         sideOffset={5}
                       >
                         Publish your app to the internet.
@@ -430,7 +566,7 @@ export default function Home() {
                       duration: 0.85,
                       delay: 0.5,
                     }}
-                    className="absolute inset-x-0 bottom-0 top-1/2 flex items-center justify-center rounded-r border border-gray-400 bg-gradient-to-br from-gray-100 to-gray-300 md:inset-y-0 md:left-1/2 md:right-0"
+                    className="absolute inset-x-0 bottom-0 top-1/2 flex items-center justify-center rounded-[10px] border border-gray-400 bg-gradient-to-br from-gray-100 to-gray-300 md:inset-y-0 md:left-1/2 md:right-0"
                   >
                     <p className="animate-pulse text-3xl font-bold">
                       {status === "creating"
